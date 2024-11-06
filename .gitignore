@@ -84,3 +84,5 @@ fabric.properties
 /.idea/spotify-genre-prediction.iml
 /.idea/vcs.xml
 /data/raw/spotify-dataset-114k-songs.zip
+/.idea/deployment.xml
+/.idea/misc.xml
