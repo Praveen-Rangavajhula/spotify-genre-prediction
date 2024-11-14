@@ -1,7 +1,7 @@
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 
 
 def load_spotify_dataset():
@@ -17,7 +17,8 @@ def load_spotify_dataset():
     3. Extracts the 'track_genre' column as the target variable.
     4. Drops the 'track_genre' and 'track_id' columns from the dataset.
     5. One-hot encodes the 'explicit' column.
-    6. Standardizes the numeric columns to a range of [0, 1].
+    6. Label encode the other categorical columns.
+    7. Standardizes the numeric columns to a range of [0, 1].
 
     Returns:
         pd.DataFrame: A DataFrame containing the preprocessed and standardized Spotify dataset.
@@ -37,6 +38,13 @@ def load_spotify_dataset():
     df_spotify = df_spotify.drop(columns=['track_genre', 'track_id'])
 
     df_spotify = pd.get_dummies(df_spotify, columns=['explicit'], prefix='explicit')
+
+    categorical_cols = df_spotify.select_dtypes(include=['object']).columns
+    label_encoders = {}
+    for col in categorical_cols:
+        le = LabelEncoder()
+        df_spotify[col] = le.fit_transform(df_spotify[col])
+        label_encoders[col] = le
 
     df_spotify = standardize_data(df_spotify)
 
