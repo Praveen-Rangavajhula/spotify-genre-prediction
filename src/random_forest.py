@@ -1,6 +1,6 @@
 import logging
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 from data.data_loader import load_spotify_dataset, train_val_test_split
 from sklearn.metrics import accuracy_score
 
@@ -13,20 +13,23 @@ def train_random_forest():
     X_train, y_train, X_val, y_val, _, _ = train_val_test_split(X, y)
     logging.info("Data loaded and split into training and validation sets.")
 
-    param_grid = {
-        'n_estimators': [50],
-        'max_depth': [10],
-        'min_samples_split': [2],
-        'min_samples_leaf': [1]
+    # Define a smaller, efficient parameter distribution for RandomizedSearchCV
+    param_dist = {
+        'n_estimators': [50, 100],
+        'max_depth': [10, 20],
+        'min_samples_split': [2, 5],
+        'min_samples_leaf': [1, 2]
     }
 
-    model = RandomForestClassifier(random_state=42)
-    grid_search = GridSearchCV(model, param_grid, scoring='accuracy', cv=5)
-    logging.info("Starting grid search for hyperparameter tuning...")
-    grid_search.fit(X_train, y_train)
-    logging.info("Grid search completed.")
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    random_search = RandomizedSearchCV(
+        model, param_distributions=param_dist, n_iter=5, scoring='accuracy', cv=5, n_jobs=4, random_state=42
+    )
+    logging.info("Starting randomized search for hyperparameter tuning...")
+    random_search.fit(X_train, y_train)
+    logging.info("Randomized search completed.")
 
-    best_model = grid_search.best_estimator_
+    best_model = random_search.best_estimator_
     logging.info(f"Best model parameters: {best_model.get_params()}")
 
     val_preds = best_model.predict(X_val)

@@ -1,7 +1,8 @@
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder, StandardScaler
+from sklearn.utils import resample
 
 
 def load_spotify_dataset():
@@ -14,15 +15,16 @@ def load_spotify_dataset():
     The function performs the following preprocessing steps:
     1. Drops duplicate rows.
     2. Handles missing values by dropping rows with any missing values.
-    3. Extracts the 'track_genre' column as the target variable.
-    4. Drops the 'track_genre' and 'track_id' columns from the dataset.
+    3. Upsamples the minority class in 'explicit' to balance it.
+    4. Balances data across 'time_signature' by upsampling to match the maximum count.
     5. One-hot encodes the 'explicit' column.
-    6. Label encode the other categorical columns.
-    7. Standardizes the numeric columns to a range of [0, 1].
+    6. Label encodes other categorical columns.
+    7. Standardizes the numeric columns to have mean 0 and standard deviation 1.
+    8. Separates features (X) and target (y) after all preprocessing steps.
 
     Returns:
-        pd.DataFrame: A DataFrame containing the preprocessed and standardized Spotify dataset.
-        pd.Series: A Series containing the target variable 'track_genre'.
+        pd.DataFrame: Preprocessed features (X).
+        pd.Series: Target variable 'track_genre' (y).
     """
     df_spotify = pd.read_csv('../data/raw/dataset.csv', index_col=0)
 
@@ -32,24 +34,42 @@ def load_spotify_dataset():
     # Handle missing values
     df_spotify = df_spotify.dropna()
 
-    target_column = df_spotify['track_genre']
+    # Upsample the minority class in 'explicit' to balance it
+    df_majority = df_spotify[df_spotify['explicit'] == False]
+    df_minority = df_spotify[df_spotify['explicit'] == True]
 
-    # Drop target column and track_id
-    df_spotify = df_spotify.drop(columns=['track_genre', 'track_id'])
+    df_minority_upsampled = resample(
+        df_minority,
+        replace=True,
+        n_samples=len(df_majority),
+        random_state=42
+    )
+    df_balanced = pd.concat([df_majority, df_minority_upsampled])
 
-    df_spotify = pd.get_dummies(df_spotify, columns=['explicit'], prefix='explicit')
+    # Balance across 'time_signature' by upsampling
+    df_resampled_time_signature = df_balanced.groupby('time_signature').apply(
+        lambda x: x.sample(df_balanced['time_signature'].value_counts().max(), replace=True)
+    ).reset_index(drop=True)
 
-    categorical_cols = df_spotify.select_dtypes(include=['object']).columns
+    # One-Hot Encode the 'explicit' column
+    df_resampled_time_signature = pd.get_dummies(df_resampled_time_signature, columns=['explicit'], prefix='explicit')
+
+    # Label encode other categorical columns
+    categorical_cols = df_resampled_time_signature.select_dtypes(include=['object']).columns.difference(['track_genre'])
     label_encoders = {}
     for col in categorical_cols:
         le = LabelEncoder()
-        df_spotify[col] = le.fit_transform(df_spotify[col])
+        df_resampled_time_signature[col] = le.fit_transform(df_resampled_time_signature[col])
         label_encoders[col] = le
 
-    df_spotify = standardize_data(df_spotify)
+    # Standardize numeric columns
+    df_resampled_time_signature = standardize_data(df_resampled_time_signature)
 
-    return df_spotify, target_column
+    # Separate X and y after all preprocessing
+    X = df_resampled_time_signature.drop(columns=['track_genre'])
+    y = df_resampled_time_signature['track_genre']
 
+    return X, y
 
 def standardize_data(df):
     """
@@ -65,7 +85,7 @@ def standardize_data(df):
     """
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
 
-    scaler = MinMaxScaler()
+    scaler = StandardScaler()
     df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
 
     return df
