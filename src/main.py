@@ -20,11 +20,11 @@ def main():
 
     # Step 2: Train each model and retrieve the best model and validation accuracy
     models = {
-        'Decision Tree': train_decision_tree(),
-        'Logistic Regression': train_logistic_regression(),
-        'SVM': train_svm(),
-        'Neural Network': train_neural_network(),
-        'Naive Bayes': train_naive_bayes(),
+        # 'Decision Tree': train_decision_tree(),
+        # 'Logistic Regression': train_logistic_regression(),
+        # 'SVM': train_svm(),
+        # 'Neural Network': train_neural_network(),
+        # 'Naive Bayes': train_naive_bayes(),
         'Random Forest': train_random_forest(),
     }
 
