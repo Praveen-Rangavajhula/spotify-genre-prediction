@@ -1,31 +1,11 @@
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder, StandardScaler
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.utils import resample
 
 
 def load_spotify_dataset():
-    """
-    Load the Spotify dataset from a CSV file, preprocess it, and standardize the numeric columns.
-
-    The dataset is expected to be located at '../data/raw/dataset.csv'.
-    The first column of the CSV file is used as the index.
-
-    The function performs the following preprocessing steps:
-    1. Drops duplicate rows.
-    2. Handles missing values by dropping rows with any missing values.
-    3. Upsamples the minority class in 'explicit' to balance it.
-    4. Balances data across 'time_signature' by upsampling to match the maximum count.
-    5. One-hot encodes the 'explicit' column.
-    6. Label encodes other categorical columns.
-    7. Standardizes the numeric columns to have mean 0 and standard deviation 1.
-    8. Separates features (X) and target (y) after all preprocessing steps.
-
-    Returns:
-        pd.DataFrame: Preprocessed features (X).
-        pd.Series: Target variable 'track_genre' (y).
-    """
     df_spotify = pd.read_csv('../data/raw/dataset.csv', index_col=0)
 
     # Drop duplicate rows
@@ -62,8 +42,21 @@ def load_spotify_dataset():
         df_resampled_time_signature[col] = le.fit_transform(df_resampled_time_signature[col])
         label_encoders[col] = le
 
+    # Create 'interestingness' feature
+    df_resampled_time_signature['interestingness'] = (
+            df_resampled_time_signature['loudness'] +
+            df_resampled_time_signature['tempo'] +
+            (df_resampled_time_signature['energy'] * 100) +
+            (df_resampled_time_signature['danceability'] * 100) +
+            (df_resampled_time_signature['acousticness'] * 100)
+    )
+
     # Standardize numeric columns
     df_resampled_time_signature = standardize_data(df_resampled_time_signature)
+
+    # Label encode the target variable 'track_genre'
+    le_genre = LabelEncoder()
+    df_resampled_time_signature['track_genre'] = le_genre.fit_transform(df_resampled_time_signature['track_genre'])
 
     # Separate X and y after all preprocessing
     X = df_resampled_time_signature.drop(columns=['track_genre'])
@@ -92,31 +85,18 @@ def standardize_data(df):
 
 
 def train_val_test_split(X, y, train_size=0.8, val_size=0.1, test_size=0.1, random_state=42):
-    """
-    Splits the features and target into train, validation, and test sets.
-
-    Args:
-        X (pd.DataFrame): The input DataFrame containing features.
-        y (pd.Series): The target Series.
-        train_size (float): Proportion of data to use for the training set.
-        val_size (float): Proportion of data to use for the validation set.
-        test_size (float): Proportion of data to use for the test set.
-        random_state (int): Random seed for reproducibility.
-
-    Returns:
-        pd.DataFrame: Training features
-        pd.Series: Training target
-        pd.DataFrame: Validation features
-        pd.Series: Validation target
-        pd.DataFrame: Test features
-        pd.Series: Test target
-    """
     assert train_size + val_size + test_size == 1, "train, val, and test sizes must sum to 1"
 
-    X_train, X_rem, y_train, y_rem = train_test_split(X, y, train_size=train_size, random_state=random_state)
+    # Split the dataset with stratification
+    X_train, X_rem, y_train, y_rem = train_test_split(
+        X, y, train_size=train_size, random_state=random_state, stratify=y
+    )
 
+    # Calculate the validation ratio
     val_ratio = val_size / (val_size + test_size)
 
-    X_val, X_test, y_val, y_test = train_test_split(X_rem, y_rem, test_size=1 - val_ratio, random_state=random_state)
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_rem, y_rem, test_size=1-val_ratio, random_state=random_state, stratify=y_rem
+    )
 
     return X_train, y_train, X_val, y_val, X_test, y_test

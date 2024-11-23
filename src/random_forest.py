@@ -21,9 +21,9 @@ def train_random_forest():
         'min_samples_leaf': [1, 2]
     }
 
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model = RandomForestClassifier(random_state=42, warm_start=True)
     random_search = RandomizedSearchCV(
-        model, param_distributions=param_dist, n_iter=5, scoring='accuracy', cv=5, n_jobs=4, random_state=42
+        model, param_distributions=param_dist, n_iter=5, scoring='accuracy', cv=3, n_jobs=4, random_state=42
     )
     logging.info("Starting randomized search for hyperparameter tuning...")
     random_search.fit(X_train, y_train)

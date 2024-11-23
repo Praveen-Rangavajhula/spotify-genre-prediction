@@ -1,6 +1,6 @@
 import logging
 from sklearn.svm import SVC
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 from data.data_loader import load_spotify_dataset, train_val_test_split
 from sklearn.metrics import accuracy_score
 
@@ -13,22 +13,32 @@ def train_svm():
     X_train, y_train, X_val, y_val, _, _ = train_val_test_split(X, y)
     logging.info("Data loaded and split into training and validation sets.")
 
-    param_grid = {
-        'C': [0.1, 1, 10, 100],
-        'kernel': ['linear', 'rbf', 'poly'],
-        'gamma': ['scale', 'auto'],
-        'decision_function_shape': ['ovr']
+    # Define a reduced parameter grid for faster tuning
+    param_dist = {
+        'C': [0.1, 1, 10],  # Reduced range
+        'kernel': ['linear', 'rbf'],  # Focus on most common kernels
+        'gamma': ['scale', 'auto']  # Keep gamma options
     }
 
     model = SVC(random_state=42)
-    grid_search = GridSearchCV(model, param_grid, scoring='accuracy', cv=5)
-    logging.info("Starting grid search for hyperparameter tuning...")
-    grid_search.fit(X_train, y_train)
-    logging.info("Grid search completed.")
 
-    best_model = grid_search.best_estimator_
+    # Use RandomizedSearchCV for faster tuning
+    random_search = RandomizedSearchCV(
+        model, param_distributions=param_dist, n_iter=4, scoring='accuracy', cv=3, n_jobs=-1, random_state=42
+    )
+    logging.info("Starting randomized search for hyperparameter tuning...")
+
+    # Subsample data for faster hyperparameter tuning
+    X_train_sub = X_train.sample(frac=0.5, random_state=42)
+    y_train_sub = y_train[X_train_sub.index]
+    random_search.fit(X_train_sub, y_train_sub)
+
+    logging.info("Randomized search completed.")
+
+    best_model = random_search.best_estimator_
     logging.info(f"Best model parameters: {best_model.get_params()}")
 
+    # Evaluate on validation set
     val_preds = best_model.predict(X_val)
     val_accuracy = accuracy_score(y_val, val_preds)
     logging.info(f"Best SVM Validation Accuracy: {val_accuracy:.4f}")
