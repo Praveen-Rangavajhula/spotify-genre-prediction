@@ -1,4 +1,7 @@
 import logging
+
+import pandas as pd
+from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from data.data_loader import load_spotify_dataset, train_val_test_split
@@ -35,5 +38,27 @@ def train_random_forest():
     val_preds = best_model.predict(X_val)
     val_accuracy = accuracy_score(y_val, val_preds)
     logging.info(f"Best Random Forest Validation Accuracy: {val_accuracy:.4f}")
+
+    # Get feature importances
+    feature_importances = pd.DataFrame({
+        'Feature': X_train.columns,
+        'Importance': best_model.feature_importances_
+    })
+
+    # Sort features by importance
+    feature_importances = feature_importances.sort_values(by='Importance', ascending=False)
+
+    # Display the top features
+    print("Top 10 Important Features:")
+    print(feature_importances.head(10))
+
+    # Plot the feature importances
+    plt.figure(figsize=(8, 6))
+    plt.barh(feature_importances['Feature'].head(10), feature_importances['Importance'].head(10))
+    plt.gca().invert_yaxis()
+    plt.xlabel('Importance')
+    plt.ylabel('Feature')
+    plt.title('Top 10 Feature Importances from Decision Tree')
+    plt.show()
 
     return best_model, val_accuracy

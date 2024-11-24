@@ -15,15 +15,15 @@ def main():
     # Split the data
     _, _, _, _, X_test, y_test = train_val_test_split(X, y)
 
-    # Train each model
     models = {
-        'Decision Tree': train_decision_tree(),
+        # 'Decision Tree': train_decision_tree(),
         # 'Logistic Regression': train_logistic_regression(),
-        # 'SVM': train_svm(),
+        'SVM': train_svm(),
         # 'Neural Network': train_neural_network(),
         # 'Naive Bayes': train_naive_bayes(),
         # 'Random Forest': train_random_forest(),
     }
+    # Train each model
 
     # Evaluate and save results
     for model_name, (model, val_accuracy) in models.items():

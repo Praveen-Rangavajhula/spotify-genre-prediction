@@ -25,7 +25,7 @@ def train_neural_network():
 
     # Use RandomizedSearchCV for faster tuning
     random_search = RandomizedSearchCV(
-        model, param_distributions=param_dist, n_iter=4, scoring='accuracy', cv=3, n_jobs=-1, random_state=42
+        model, param_distributions=param_dist, n_iter=4, scoring='accuracy', cv=3, n_jobs=4, random_state=42
     )
     logging.info("Starting randomized search for hyperparameter tuning...")
 

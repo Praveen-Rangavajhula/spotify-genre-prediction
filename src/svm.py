@@ -15,16 +15,16 @@ def train_svm():
 
     # Define a reduced parameter grid for faster tuning
     param_dist = {
-        'C': [0.1, 1, 10],  # Reduced range
-        'kernel': ['linear', 'rbf'],  # Focus on most common kernels
+        'C': [1, 10],  # Reduced range
+        'kernel': ['rbf'],  # Focus on most common kernels
         'gamma': ['scale', 'auto']  # Keep gamma options
     }
 
-    model = SVC(random_state=42)
+    model = SVC(decision_function_shape='ovo', random_state=42)
 
     # Use RandomizedSearchCV for faster tuning
     random_search = RandomizedSearchCV(
-        model, param_distributions=param_dist, n_iter=4, scoring='accuracy', cv=3, n_jobs=-1, random_state=42
+        model, param_distributions=param_dist, n_iter=4, scoring='accuracy', cv=3, n_jobs=4, random_state=42
     )
     logging.info("Starting randomized search for hyperparameter tuning...")
 
