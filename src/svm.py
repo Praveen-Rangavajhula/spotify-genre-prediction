@@ -1,5 +1,5 @@
 import logging
-from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 from sklearn.model_selection import RandomizedSearchCV
 from data.data_loader import load_spotify_dataset, train_val_test_split
 from sklearn.metrics import accuracy_score
@@ -15,22 +15,24 @@ def train_svm():
 
     # Define a reduced parameter grid for faster tuning
     param_dist = {
-        'C': [1, 10],  # Reduced range
-        'kernel': ['rbf'],  # Focus on most common kernels
-        'gamma': ['scale', 'auto']  # Keep gamma options
+        'C': [1, 10, 20],  # Regularization strength
     }
 
-    model = SVC(decision_function_shape='ovo', random_state=42)
+    # Using LinearSVC for faster training with linear kernel
+    model = LinearSVC(random_state=42, max_iter=1000, dual=False)
 
     # Use RandomizedSearchCV for faster tuning
     random_search = RandomizedSearchCV(
-        model, param_distributions=param_dist, n_iter=4, scoring='accuracy', cv=3, n_jobs=4, random_state=42
+        model, param_distributions=param_dist, n_iter=3, scoring='accuracy', cv=3, n_jobs=-1, random_state=42
     )
     logging.info("Starting randomized search for hyperparameter tuning...")
 
     # Subsample data for faster hyperparameter tuning
-    X_train_sub = X_train.sample(frac=0.5, random_state=42)
+    subsample_frac = 0.2  # Use 20% of the data for faster training
+    X_train_sub = X_train.sample(frac=subsample_frac, random_state=42)
     y_train_sub = y_train[X_train_sub.index]
+    logging.info(f"Subsampled {len(X_train_sub)} training examples for hyperparameter tuning.")
+
     random_search.fit(X_train_sub, y_train_sub)
 
     logging.info("Randomized search completed.")
@@ -44,3 +46,4 @@ def train_svm():
     logging.info(f"Best SVM Validation Accuracy: {val_accuracy:.4f}")
 
     return best_model, val_accuracy
+

@@ -1,9 +1,10 @@
-from src.logistic_regression import train_logistic_regression
+
 from src.neural_network import train_neural_network
 from src.naive_bayes import train_naive_bayes
 from src.random_forest import train_random_forest
 from src.svm import train_svm
 from src.decision_tree import train_decision_tree
+from src.knn import train_knn
 from utils import save_metrics, plot_roc_curve
 from data.data_loader import load_spotify_dataset, train_val_test_split
 from sklearn.metrics import accuracy_score
@@ -13,15 +14,16 @@ def main():
     X, y = load_spotify_dataset()
 
     # Split the data
-    _, _, _, _, X_test, y_test = train_val_test_split(X, y)
+    X_train, y_train, X_val, y_val, X_test, y_test = train_val_test_split(X, y)
 
     models = {
         # 'Decision Tree': train_decision_tree(),
         # 'Logistic Regression': train_logistic_regression(),
-        'SVM': train_svm(),
+        # 'KNN': train_knn(),
+        # 'SVM': train_svm(),
         # 'Neural Network': train_neural_network(),
         # 'Naive Bayes': train_naive_bayes(),
-        # 'Random Forest': train_random_forest(),
+        'Random Forest': train_random_forest(),
     }
     # Train each model
 
