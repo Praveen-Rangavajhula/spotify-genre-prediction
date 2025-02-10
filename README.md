@@ -60,19 +60,19 @@ We experimented with a variety of models:
 - **Random Forests** and **Decision Trees** performed best, achieving over **80% accuracy**.
 - Preprocessing steps such as balancing features and log transformations significantly improved performance.
 
-![Model Performance](model_accuracies.png)
+![Model Performance](src/results/Decision Tree_confusion_matrix.png)
 
 ---
 
 ## Key Features and Insights
 - Top features identified by the Random Forest model include:
-  - `valence`
-  - `speechiness`
   - `popularity`
+  - `speechiness`
+  - `danceability_valence`
 
 These features were crucial for improving genre classification performance.
 
-![Feature Importance](top_10_feature_importances.png)
+![Feature Importance](src/random_forest_feature_importances.png)
 
 ---
 
